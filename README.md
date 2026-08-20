@@ -181,7 +181,7 @@ Polarion 토큰은 환경변수 `POLARION_TOKEN`으로만 전달합니다. S4U �
 ## Installation
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/hongmin3/vxvue-srs-spec-automation.git
 cd vxvue-srs-spec-automation
 pip install -r requirements.txt
 playwright install chromium
