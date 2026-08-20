@@ -1,0 +1,24 @@
+# Secrets / personal config
+.env
+config/config.yaml
+
+# Internal-only implementation log (contains real project/company details)
+IMPLEMENTATION_LOG.md
+
+# Real ALM data (must never be committed to the public repo)
+output/
+archive/
+snapshots/
+logs/
+*.part
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# OS
+Thumbs.db
+.DS_Store

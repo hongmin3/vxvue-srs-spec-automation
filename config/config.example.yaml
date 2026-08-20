@@ -1,0 +1,82 @@
+# SRS 사양서 자동화 설정 템플릿.
+# 이 파일을 config/config.yaml 로 복사한 뒤 사내 환경에 맞게 채우세요.
+#   cp config/config.example.yaml config/config.yaml
+
+polarion:
+  host: "https://your-polarion-server.example.com"
+  token_env: "POLARION_TOKEN"   # 실제 토큰 값이 아니라 "환경변수 이름"
+  verify_ssl: true
+  timeout_seconds: 90
+  request_interval_seconds: 0.15
+  page_size: 100
+
+# 수집 대상 Polarion 프로젝트 목록.
+# query는 Polarion 검색창의 "Convert to Text" 결과를 그대로 사용하는 것이 안전합니다.
+projects:
+  - id: "YOUR_PROJECT_ID"
+    query: "type:srs"
+    fetch_comments: true
+  - id: "YOUR_SECOND_PROJECT_ID"
+    query: "type:srs"
+    fetch_comments: true
+
+# SRS 본문(Rich Text) 필드 우선순위.
+# 항목마다 언어별 필드가 섞여 있을 수 있어, 존재하는 첫 번째 필드를 본문으로 사용합니다.
+content:
+  field_priority: ["descriptionKR", "description"]
+
+# 안정적 PDF 분할 정책 (Stable Partitioning).
+# key(oldId의 최상위 모듈 번호, 예 "01")를 기준으로 그룹을 고정합니다.
+# 매 실행마다 이 매핑을 그대로 재사용해야 동일 SRS가 항상 같은 파일에 남습니다.
+partition:
+  vxvue_project_id: "YOUR_PROJECT_ID"
+  vxvue_groups:
+    - file_key: "spec1"
+      display_name: "YOUR_PROJECT_ID 사양서1"
+      modules: ["01", "02"]
+    - file_key: "spec2"
+      display_name: "YOUR_PROJECT_ID 사양서2"
+      modules: ["04"]
+    - file_key: "spec3"
+      display_name: "YOUR_PROJECT_ID 사양서3"
+      modules: ["03", "05", "06"]
+    - file_key: "spec4"
+      display_name: "YOUR_PROJECT_ID 사양서4"
+      modules: ["07"]
+    - file_key: "spec5"
+      display_name: "YOUR_PROJECT_ID 사양서5"
+      modules: ["08", "09", "10", "11"]
+  single_file_projects:
+    # 하위 그룹 없이 프로젝트 전체를 파일 하나로 묶는 경우 (예: License Manager)
+    - project_id: "YOUR_SECOND_PROJECT_ID"
+      file_key: "license_manager"
+      display_name: "YOUR_SECOND_PROJECT_ID SRS 사양서"
+
+output:
+  base_dir: "output"
+  archive_dir: "archive"
+  snapshots_dir: "snapshots"
+  logs_dir: "logs"
+  # 최종 PDF를 반영할 실제 지식파일 폴더 (절대경로). 비워두면 output/ 안에만 생성합니다.
+  knowledge_folder: ""
+  filename_prefix: "(사양서) "
+  filename_date_format: "%y%m%d"
+
+render:
+  # PDF 렌더링 1회 시도의 시간제한(초).
+  # Task Scheduler로 실행되면 기본 우선순위가 낮아 대화형 실행보다 느리다.
+  # 정상 그룹 실측 40~70초(대화형) / 90초 초과(스케줄러)를 근거로 여유 있게 설정한다.
+  pdf_timeout_seconds: 300
+
+  # 렌더링 폭주(Chromium 인쇄 페이지네이션 버그)가 이미 확인된 SRS.
+  # 여기에 등록된 SRS는 이분 탐색 없이 곧바로 서식 단순화 fallback을 적용한다.
+  # (매 실행마다 반복되는 이분 탐색 비용 - 1건당 약 10분 - 을 제거하기 위함)
+  # 원본 SRS가 수정되어 정상 렌더링될 수 있는지 재확인하려면
+  #   python main.py --recheck-known-problems
+  known_problem_srs:
+    # - "PROJECT/WI-123"
+
+validation:
+  # 실행 성공 판정에 사용할 최소 기준
+  min_expected_srs_ratio: 0.95   # 직전 스냅샷 대비 이 비율 미만으로 줄어들면 실패 처리
+  require_all_pdfs: true
